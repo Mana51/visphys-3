@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/css/home.css">
+</head>
+<body>
+  <div class="body">
+    <section>
+        <div class="color"></div>
+        <div class="color"></div>
+        <div class="color"></div>
+        
+        <form action="/search" method="post">
+          <div class="search">
+            <span class="search-icon material-symbols-outlined">search</span>
+            <input class="search-input" type="search" placeholder="検索" name="search">
+          </div>
+        </form>
+      
+        <div class="container-area">
+            <% if @search_results.any? %>
+                <% @search_results.each do |simulation| %>
+                    <div class="container">
+                        <a href="/load_simulation/<%= simulation.id %>">
+                            <img src="/img/<%= simulation.simulation_type %>.png">
+                            <p><%= simulation.title %></p>
+                        </a>
+                    </div>
+                <% end %>
+            <% else %>
+                <p class="message">一致するものがありません</p>
+            <% end %>
+        </div>
+          
+    </section>
+  </div>
+</body>
+</html>

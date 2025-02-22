@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/css/simulation.css">
+</head>
+
+<body>
+  <div class="body">
+    
+    <div class="simulation-area">
+      
+      <!-- Canvas Area for Matter.js -->
+      <div id="canvas-area" style="position: relative; width: 900px; height: 600px;">
+        <canvas id="matterCanvas" style="position: absolute; top: 0; left: 0; z-index: 0;" width="800" height="600"></canvas>
+        <canvas id="fabricCanvas" style="position: absolute; top: 0; left: 0; z-index: 1;" width="800" height="600"></canvas>
+      </div>
+      
+      <!-- Simulation and Editing Control Buttons -->
+      <div class="play_pause">
+        <button type="button" id="stopButton"></button>
+        <button type="button" id="startButton" style="display:none;"></button>
+      </div>
+  
+      <!-- Buttons for drawing on the canvas -->
+      <div class="edit-buttons">
+        <div><button type="button" id="drawButton"></button></div>
+        <div><button type="button" id="selectButton"></button></button></div>
+        <div><button type="button" id="clearButton"></button></div>
+        <div><button type="button" id="downloadButton"></button></div>
+      </div>
+  
+    </div>
+    
+    <div class="form">
+      <form id="controls">
+        <div class="control">
+          <label for="mass">物体の質量</label>
+          <input type="number" id="mass" name="mass" value="<%= @variables ? @variables['mass'] || 1 : 1 %>" min="0.1" step="0.1">
+        </div>
+        <div class="control">
+          <label>物体の形</label>
+          <input type="radio" id="rectangle" name="shape" value="rectangle" <%= (@variables.nil? || @variables['shape'] == 'rectangle') ? 'checked' : '' %>>
+          <label class="shape" for="rectangle">直方体</label>
+          <input type="radio" id="circle" name="shape" value="circle" <%= (@variables && @variables['shape'] == 'circle') ? 'checked' : '' %>>
+          <label class="shape" for="circle">球</label>
+        </div>
+        <button type="button" id="updateButton">アップデート</button>
+      </form>
+    </div>
+    
+ 
+
+    <form id="saveSimulationForm" method="POST" action="/saveSimulation">
+      <button type="submit" class="saveButton"></button>
+      <input type="text" name="title" placeholder="タイトル" required>
+      <input type="hidden" name="simulation_type" value="free_fall"> <!-- シミュレーション種類 -->
+      <input type="hidden" name="variables" id="variablesInput"> <!-- 変数をここに入れる -->
+    </form>
+    
+    <form id="shareSimulationForm" method="POST" action="/shareSimulation">
+      <button type="submit" class="shareButton"></button>
+      <input type="hidden" name="simulation_type" value="free_fall"> 
+      <input type="hidden" name="variables" id="shareVariablesInput">
+    </form>
+    
+    <script>
+      //matter.js描画コード
+      // 使用モジュール
+      const Engine = Matter.Engine,
+        Render = Matter.Render,
+        Runner = Matter.Runner,
+        Body = Matter.Body,
+        Bodies = Matter.Bodies,
+        Composite = Matter.Composite,
+        MouseConstraint = Matter.MouseConstraint,
+        Mouse = Matter.Mouse;
+        Events = Matter.Events;
+    
+      const engine = Engine.create();
+    
+      const matterCanvas = $('#matterCanvas')[0];
+      const fabricCanvas = new fabric.Canvas('fabricCanvas');
+    
+      matterCanvas.width = 800;
+      matterCanvas.height = 600;
+      fabricCanvas.setWidth(800);
+      fabricCanvas.setHeight(600);
+    
+      const render = Render.create({
+        canvas: matterCanvas,
+        engine: engine,
+        options: {
+          width: 800,
+          height: 600,
+          background: '#fafafa',
+          wireframes: false
+        }
+      });
+    
+      const mouse = Mouse.create(render.canvas);
+      const mouseConstraint = MouseConstraint.create(engine, {
+        mouse: mouse,
+        constraint: {
+          render: { visible: false }
+        }
+      });
+    
+      Composite.add(engine.world, mouseConstraint);
+      render.mouse = mouse;
+    
+      Render.run(render);
+      const runner = Runner.create();
+      Runner.run(runner, engine);
+    
+      const ground = Bodies.rectangle(400, 600, 800, 20, { isStatic: true });
+      const leftWall = Bodies.rectangle(0, 300, 20, 600, { isStatic: true });
+      const rightWall = Bodies.rectangle(800, 300, 20, 600, { isStatic: true });
+      const roof = Bodies.rectangle(400, 0, 800, 20, { isStatic: true });
+      Composite.add(engine.world, [ground, leftWall, rightWall, roof]);
+  
+      // 物体の生成
+      let shape;
+
+      function createShape(type, mass) {
+        if (type === 'circle') {
+          return Bodies.circle(400, 100, 25, { mass: mass, friction: 0, restitution: 0 });
+        } else if (type === 'rectangle') {
+          return Bodies.rectangle(400, 100, 90, 50, { mass: mass, friction: 0, restitution: 0 });
+        }
+      }
+
+      $(document).ready(function() {
+          // ページの読み込み時にすべてのキャンバスとそのコンテナをゼロにする
+          $('.canvas-container, #fabricCanvas, .upper-canvas').css({
+              'width': '0',
+              'height': '0'
+          });
+          $('#fabricCanvas').css('pointer-events', 'none');
+      
+          if (<%= @variables ? 'true' : 'false' %>) {
+              const savedVariables = JSON.parse(<%= @variables.to_json %>);
+              $('#mass').val(savedVariables.mass || 1);
+              $('input[name="shape"][value="' + (savedVariables.shape || 'rectangle') + '"]').prop('checked', true);
+      
+              // 形状を生成
+              shape = createShape(savedVariables.shape || 'rectangle', parseFloat(savedVariables.mass) || 1);
+              Composite.add(engine.world, shape);
+          } else {
+              // デフォルト値を設定
+              $('#mass').val(1);
+              $('input[name="shape"][value="rectangle"]').prop('checked', true);
+      
+              // デフォルトの形状を生成
+              shape = createShape('rectangle', 1);
+              Composite.add(engine.world, shape);
+          }
+      
+          // フォーム送信処理
+          $('#saveSimulationForm').on('submit', function(e) {
+              e.preventDefault();
+      
+              // ユーザーが入力した値を取得してオブジェクトにまとめる
+              const variables = {
+                  mass: $('#mass').val(),
+                  shape: $('input[name="shape"]:checked').val(),
+              };
+      
+              // 変数オブジェクトをJSON形式に変換してhiddenフィールドに設定
+              $('#variablesInput').val(JSON.stringify(variables));
+      
+              // フォームを送信
+              this.submit();
+          });
+      });
+      
+    
+      
+      $('#shareSimulationForm').on('submit', function(e) {
+          e.preventDefault();
+      
+          // ユーザーが入力した値を取得してオブジェクトにまとめる
+          const variables = {
+              mass: $('#mass').val(),
+              shape: $('input[name="shape"]:checked').val(),
+          };
+      
+          // 変数オブジェクトをJSON形式に変換してhiddenフィールドに設定
+          $('#shareVariablesInput').val(JSON.stringify(variables));
+      
+          // フォームを送信してシェアリンクを生成
+          $.post('/shareSimulation', $(this).serialize(), function(data) {
+              // サーバーから返されたシェアリンクを取得
+              const shareLink = data.share_link;  
+      
+              // シェアリンクをクリップボードにコピー
+              navigator.clipboard.writeText(shareLink).then(() => {
+                  alert('リンクがクリップボードにコピーされました');
+              }).catch(err => {
+                  console.error('コピーに失敗しました: ', err);
+              });
+          }, 'json');
+      });
+
+
+      
+      $('#updateButton').on('click', function() {
+        const mass = parseFloat($('#mass').val());
+        const shapeType = $('input[name="shape"]:checked').val();
+        
+        // 前の形状を削除
+        Composite.remove(engine.world, shape, true);
+        
+        // 新しい形状を生成
+        shape = createShape(shapeType, mass);
+        
+        // 新しい形状を追加
+        Composite.add(engine.world, shape);
+      });
+
+      $('#stopButton').on('click', function() {
+          Runner.stop(runner);
+          $(this).hide();
+          $('#startButton').show();
+      
+          // Fabric.js canvas, upper-canvas とその親要素 (canvas-container) の幅と高さを元に戻す
+          $('.canvas-container, #fabricCanvas, .upper-canvas').css({
+              'width': '800px',
+              'height': '600px'
+          });
+          $('#fabricCanvas').css('pointer-events', 'auto');
+          $('#matterCanvas').css('pointer-events', 'none');
+          $('#fabricCanvas').css('z-index', 1);
+          $('.edit-buttons').show();
+      });
+
+      $('#startButton').on('click', function() {
+          Runner.run(runner, engine);
+          $(this).hide();
+          $('#stopButton').show();
+      
+          // Fabric.js canvas, upper-canvas とその親要素 (canvas-container) の幅と高さを0に
+          $('.canvas-container, #fabricCanvas, .upper-canvas').css({
+              'width': '0',
+              'height': '0'
+          });
+          $('#fabricCanvas').css('pointer-events', 'none');
+          $('#matterCanvas').css('pointer-events', 'auto');
+          $('#matterCanvas').css('z-index', 1);
+          $('.edit-buttons').hide();
+      
+          // Drawing モードを無効化
+          fabricCanvas.isDrawingMode = false;
+      
+          // マウス制約を再追加
+          render.mouse = mouse;
+          mouseConstraint.mouse.element.removeEventListener("mousemove", mouseConstraint.mouse.mousemove);
+          mouseConstraint.mouse.element.addEventListener("mousemove", mouseConstraint.mouse.mousemove);
+      });
+      
+      // 描くボタンが押されたときの処理
+      document.getElementById("drawButton").addEventListener("click", function () {
+          fabricCanvas.isDrawingMode = true;  // 描画モードをオンに
+          fabricCanvas.freeDrawingBrush.width = 5;  // ブラシのサイズ
+          fabricCanvas.freeDrawingBrush.color = "black";  // ブラシの色
+      });
+      
+      // 新しく追加した選択ボタンが押されたときの処理
+      document.getElementById("selectButton").addEventListener("click", function () {
+          fabricCanvas.isDrawingMode = false;  // 描画モードをオフにして選択モードへ
+      });
+      
+      // 描画をクリアするボタンの処理
+      document.getElementById("clearButton").addEventListener("click", function () {
+          fabricCanvas.clear();  // Fabric.js のキャンバスをクリア
+          ws.send(JSON.stringify({type: 'clear'}));
+      });
+      
+      document.getElementById("downloadButton").addEventListener("click", function () {
+        const combinedCanvas = document.createElement('canvas');
+        combinedCanvas.width = fabricCanvas.width;
+        combinedCanvas.height = fabricCanvas.height;
+      
+        const combinedContext = combinedCanvas.getContext('2d');
+        const matterContext = matterCanvas.getContext('2d');
+      
+        // Matter.js の canvas を描画
+        combinedContext.drawImage(matterCanvas, 0, 0);
+      
+        // Fabric.js の canvas を描画
+        fabricCanvas.renderAll();
+        const fabricImage = fabricCanvas.toCanvasElement();
+        combinedContext.drawImage(fabricImage, 0, 0);
+      
+        const link = document.createElement('a');
+        link.href = combinedCanvas.toDataURL('image/png');
+        link.download = 'visphys.png';
+        link.click();
+      });
+      
+      
+      
+      
+      //WebSocketを使ってキャンバスをリアルタイムで反映
+      //WebSocketの接続
+      const ws = new WebSocket('wss://' + window.location.host + '/ws/<%= @token %>'); //サーバーのWebSocketエンドポイント
+      
+      let isWsConnected = false;
+      
+      document.addEventListener("DOMContentLoaded", function () {
+          
+          ws.onopen = () => {
+              console.log('WebSocket connection established');
+              isWsConnected = true;
+          };
+      })
+      
+      //受信時
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        
+        if (data.type === 'draw') {
+          fabric.util.enlivenObjects([data.data], function(objects) {
+            objects.forEach(obj => {
+              fabricCanvas.add(obj);
+            });
+          });
+        } else if (data.type === 'clear') {
+          fabricCanvas.clear();
+        }
+      };
+      
+      //線が書かれた時のイベント
+      fabricCanvas.on('path:created', function(event) {
+        const pathData = event.path.toJSON(); //描画データをJSON形式に
+        //WebSocket接続が確立されているか確認してから送信
+        if (isWsConnected) {
+          ws.send(JSON.stringify({ type: 'draw', data: pathData}));
+        } else {
+          console.warn("WebSocket connection is not open. Mesage not sent.");
+        }
+      });
+      
+    </script>
+  </div>
+</body>
+</html>

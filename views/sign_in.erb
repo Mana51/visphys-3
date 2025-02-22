@@ -1,0 +1,26 @@
+<div class="body">
+    <section>
+        <div class="color"></div>
+        <div class="color"></div>
+        <div class="color"></div>
+        <div class="box">
+            <div class="container">
+                <div class="form">
+                    <h1>ログイン</h1>
+                    <form action="/signin" method="post">
+                        <% if flash[:error] %>
+                            <div class="error">
+                                <p><span class="error-icon">&#9888;</span>
+                                <%= flash[:error] %></p>
+                            </div>
+                        <% end %>
+                        <div class="inputBox"><input name="name" autocomplete="off" placeholder="ユーザーネームを入力" required></div>
+                        <div class="inputBox"><input name="password" type="password" placeholder="パスワードを入力" required></div>
+                        <div class="inputBox"><input type="submit" value="ログイン"></div>
+                        <p class="forget">アカウントが未登録ですか？<a href="/signup"> 新規登録</a></p>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>

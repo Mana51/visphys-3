@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/css/home.css">
+</head>
+<body>
+  <div class="body">
+    <section>
+      <div class="color"></div>
+      <div class="color"></div>
+      <div class="color"></div>
+        
+      <div>
+        <h1 class="page-title">あなたが保存したシミュレーション一覧</h1>
+      </div>
+        
+      <form class="filter-form" action="/mypage/filter" method="post">
+        <div class="filter-container"> <!-- New container -->
+          <img class="filter-button" src="/img/filter.png" alt="Filter">
+          <div class="checkbox-container">
+            <div class="checkbox">
+              <label>
+                <input type="checkbox" name="simulations[]" value="free_fall"> 自由落下
+              </label><br>
+              <label>
+                <input type="checkbox" name="simulations[]" value="tousoku_tyokusen"> 等速直線運動
+              </label><br>
+              <label>
+                <input type="checkbox" name="simulations[]" value="toukasoku"> 等加速度直線運動
+              </label><br>
+              <label>
+                <input type="checkbox" name="simulations[]" value="syahou"> 斜方投射
+              </label><br>
+              <label>
+                <input type="checkbox" name="simulations[]" value="masatu"> 摩擦力
+              </label><br>
+              <label>
+                <input type="checkbox" name="simulations[]" value="tension"> 弾性力・張力
+              </label><br>
+              <label>
+                <input type="checkbox" name="simulations[]" value="slope"> 斜面
+              </label><br>
+              <label>
+                <input type="checkbox" name="simulations[]" value="spring_slope"> バネ・糸付き斜面
+              </label><br>
+              <label>
+                <input type="checkbox" name="simulations[]" value="hanpatu"> 反発係数
+              </label><br>
+              <label>
+                <input type="checkbox" name="simulations[]" value="syoutotu_1d"> ２物体の衝突（１次元）
+              </label><br>
+              <label>
+                <input type="checkbox" name="simulations[]" value="circle"> 等速円運動
+              </label><br>
+              <label>
+                <input type="checkbox" name="simulations[]" value="tansindou"> 単振動
+              </label><br>
+            </div>
+            <button class="filter-text" type="submit">フィルター</button>
+          </div>
+        </div>
+      </form>
+
+        
+        <form action="/mypage/search" method="post">
+          <div class="search">
+            <span class="search-icon material-symbols-outlined">search</span>
+            <input class="search-input" type="search" autocomplete="off" placeholder="検索" name="search">
+          </div>
+        </form>
+      
+        <div class="container-area">
+            <% if @saved_simulations.any? %>
+                <% @saved_simulations.each do |simulation| %>
+                    <div class="container">
+                        <a href="/load_simulation/<%= simulation.id %>">
+                            <img src="/img/<%= simulation.simulation_type %>.png">
+                            <p><%= simulation.title %></p>
+                        </a>
+                    </div>
+                <% end %>
+            <% else %>
+                <p class="message">保存されたシミュレーションはありません</p>
+            <% end %>
+        </div>
+          
+    </section>
+  </div>
+</body>
+</html>

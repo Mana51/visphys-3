@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/css/simulation.css">
+</head>
+
+<body>
+  <div class="body">
+    <div class="simulation-area">
+      <div id="canvas-area" style="position: relative; width: 900px; height: 600px;">
+        <canvas id="matterCanvas" style="position: absolute; top: 0; left: 0; z-index: 0;" width="800" height="600"></canvas>
+        <canvas id="fabricCanvas" style="position: absolute; top: 0; left: 0; z-index: 1;" width="800" height="600"></canvas>
+      </div>
+      
+      <div class="play_pause">
+        <button type="button" id="stopButton"></button>
+        <button type="button" id="startButton" style="display:none;"></button>
+      </div>
+  
+      <div class="edit-buttons">
+        <div><button type="button" id="drawButton"></button></div>
+        <div><button type="button" id="selectButton"></button></div>
+        <div><button type="button" id="clearButton"></button></div>
+        <div><button type="button" id="downloadButton"></button></div>
+      </div>
+  
+    </div>
+    
+    <div class="form">
+      <form id="controls">
+        <div class="control">
+          <label for="mass">物体の質量</label>
+          <input type="number" id="mass" name="mass" value="<%= @variables ? @variables['mass'] || 1 : 1 %>" min="0.1" step="0.1">
+        </div>
+        <div class="control">
+          <label for="initialSpeed">下向きの初速</label>
+          <input type="number" id="initialSpeed" name="initialSpeed" value="<%= @variables ? @variables['initialSpeed'] || 0 : 0 %>" step="0.1">
+        </div>
+        <div class="control">
+          <label for="restitution">床の反発係数</label>
+          <input type="number" id="restitution" name="restitution" value="<%= @variables ? @variables['restitution'] || 0 : 0 %>" min="0" max="1" step="0.1">
+        </div>
+        <button type="button" id="updateButton">アップデート</button>
+      </form>
+    </div>
+    
+ 
+    <form id="saveSimulationForm" method="POST" action="/saveSimulation">
+      <button type="submit" class="saveButton"></button>
+      <input type="text" name="title" placeholder="タイトル" required>
+      <input type="hidden" name="simulation_type" value="hanpatu"> <!-- シミュレーション種類 -->
+      <input type="hidden" name="variables" id="variablesInput"> <!-- 変数をここに入れる -->
+    </form>
+    
+    <form id="shareSimulationForm" method="POST" action="/shareSimulation">
+      <button type="submit" class="shareButton"></button>
+      <input type="hidden" name="simulation_type" value="hanpatu"> 
+      <input type="hidden" name="variables" id="shareVariablesInput">
+    </form>
+    
+    <script>
+      // 使用モジュール
+      const Engine = Matter.Engine,
+        Render = Matter.Render,
+        Runner = Matter.Runner,
+        Body = Matter.Body,
+        Bodies = Matter.Bodies,
+        Composite = Matter.Composite,
+        MouseConstraint = Matter.MouseConstraint,
+        Mouse = Matter.Mouse,
+        Events = Matter.Events;
+
+      const engine = Engine.create();
+      const matterCanvas = $('#matterCanvas')[0];
+      const fabricCanvas = new fabric.Canvas('fabricCanvas');
+
+      matterCanvas.width = 800;
+      matterCanvas.height = 600;
+      fabricCanvas.setWidth(800);
+      fabricCanvas.setHeight(600);
+
+      const render = Render.create({
+        canvas: matterCanvas,
+        engine: engine,
+        options: {
+          width: 800,
+          height: 600,
+          background: '#fafafa',
+          wireframes: false
+        }
+      });
+
+      const mouse = Mouse.create(render.canvas);
+      const mouseConstraint = MouseConstraint.create(engine, {
+        mouse: mouse,
+        constraint: {
+          render: { visible: false }
+        }
+      });
+
+      Composite.add(engine.world, mouseConstraint);
+      render.mouse = mouse;
+
+      Render.run(render);
+      const runner = Runner.create();
+      Runner.run(runner, engine);
+
+      const initialRestitution = '<%= @variables ? @variables['restitution'] : 0 %>';
+      let ground = Bodies.rectangle(400, 600, 800, 20, { isStatic: true, restitution: parseFloat(initialRestitution) });
+      const leftWall = Bodies.rectangle(0, 300, 20, 600, { isStatic: true });
+      const rightWall = Bodies.rectangle(800, 300, 20, 600, { isStatic: true });
+      const roof = Bodies.rectangle(400, 0, 800, 20, { isStatic: true });
+      Composite.add(engine.world, [ground, leftWall, rightWall, roof]);
+
+      let shape;
+
+      function createShape(type, mass, restitution) {
+        if (type === 'circle') {
+          return Bodies.circle(400, 400, 25, { mass: mass, restitution: restitution });
+        }
+      }
+
+      const initialMass = '<%= @variables ? @variables['mass'] : 1 %>';
+      const initialRestitutionShape = '<%= @variables ? @variables['restitution'] : 0 %>';
+      shape = createShape('circle', parseFloat(initialMass), parseFloat(initialRestitutionShape));
+      Composite.add(engine.world, shape);
+
+      $(document).ready(function() {
+        // ページの読み込み時にすべてのキャンバスとそのコンテナをゼロにする
+        $('.canvas-container, #fabricCanvas, .upper-canvas').css({
+          'width': '0',
+          'height': '0'
+        });
+        $('#fabricCanvas').css('pointer-events', 'none');
+
+        if (<%= @variables ? 'true' : 'false' %>) {
+          const savedVariables = JSON.parse(<%= @variables.to_json %>);
+          $('#mass').val(savedVariables.mass || 1);
+          $('#initialSpeed').val(savedVariables.initialSpeed || 0);
+          $('#restitution').val(savedVariables.restitution || 0);
+
+          // 前の形状を削除して新しい形状を追加
+          Composite.remove(engine.world, shape, true);
+          ground = Bodies.rectangle(400, 600, 800, 20, { isStatic: true, restitution: parseFloat(savedVariables.restitution) });
+          Composite.add(engine.world, ground);
+          shape = createShape('circle', parseFloat(savedVariables.mass), parseFloat(savedVariables.restitution));
+          Composite.add(engine.world, shape);
+        } else {
+          $('#mass').val(1);
+          $('#initialSpeed').val(0);
+          $('#restitution').val(0);
+        }
+
+        $('#saveSimulationForm').on('submit', function(e) {
+          e.preventDefault();
+
+          const variables = {
+            mass: $('#mass').val(),
+            initialSpeed: $('#initialSpeed').val(),
+            restitution: $('#restitution').val(),
+          };
+
+          $('#shareVariablesInput').val(JSON.stringify(variables));
+          this.submit();
+        });
+      });
+      
+      $('#shareSimulationForm').on('submit', function(e) {
+        e.preventDefault();
+
+        const variables = {
+          mass: $('#mass').val(),
+          initialSpeed: $('#initialSpeed').val(),
+          restitution: $('#restitution').val(),
+        };
+
+        $('#variablesInput').val(JSON.stringify(variables));
+        
+        // フォームを送信してシェアリンクを生成
+        $.post('/shareSimulation', $(this).serialize(), function(data) {
+            // サーバーから返されたシェアリンクを取得
+            const shareLink = data.share_link;  
+    
+            // シェアリンクをクリップボードにコピー
+            navigator.clipboard.writeText(shareLink).then(() => {
+                alert('リンクがクリップボードにコピーされました');
+            }).catch(err => {
+                console.error('コピーに失敗しました: ', err);
+            });
+        }, 'json');
+      });
+
+      Events.on(mouseConstraint, 'enddrag', function(event) {
+        const initialSpeed = parseFloat($('#initialSpeed').val()) || 0;
+        Body.setVelocity(event.body, { x: 0, y: initialSpeed });
+        Body.set(event.body, { frictionAir: 0 });
+      });
+
+      $('#updateButton').on('click', function() {
+        const mass = parseFloat($('#mass').val());
+        const restitution = parseFloat($('#restitution').val());
+
+        Composite.remove(engine.world, shape, true);
+        ground = Bodies.rectangle(400, 600, 800, 20, { isStatic: true, restitution: restitution });
+        Composite.add(engine.world, ground);
+        shape = createShape('circle', mass, restitution);
+        Composite.add(engine.world, shape);
+      });
+
+      $('#startButton').on('click', function() {
+        Runner.run(runner, engine);
+        $(this).hide();
+        $('#stopButton').show();
+        $('.canvas-container, #fabricCanvas, .upper-canvas').css({
+          'width': '0',
+          'height': '0'
+        });
+        $('#fabricCanvas').css('pointer-events', 'none');
+        $('#matterCanvas').css('pointer-events', 'auto');
+        $('#matterCanvas').css('z-index', 1);
+        $('.edit-buttons').hide();
+        fabricCanvas.isDrawingMode = false;
+        render.mouse = mouse;
+        mouseConstraint.mouse.element.removeEventListener("mousemove", mouseConstraint.mouse.mousemove);
+        mouseConstraint.mouse.element.addEventListener("mousemove", mouseConstraint.mouse.mousemove);
+      });
+
+      $('#stopButton').on('click', function() {
+        Runner.stop(runner);
+        $(this).hide();
+        $('#startButton').show();
+        $('.canvas-container, #fabricCanvas, .upper-canvas').css({
+          'width': '800px',
+          'height': '600px'
+        });
+        $('#fabricCanvas').css('pointer-events', 'auto');
+        $('#matterCanvas').css('pointer-events', 'none');
+        $('#matterCanvas').css('z-index', 0);
+        $('.edit-buttons').show();
+        fabricCanvas.isDrawingMode = true;
+      });
+
+      document.getElementById("drawButton").addEventListener("click", function () {
+        fabricCanvas.isDrawingMode = true;
+        fabricCanvas.freeDrawingBrush.width = 5;
+        fabricCanvas.freeDrawingBrush.color = "black";
+      });
+
+      document.getElementById("selectButton").addEventListener("click", function () {
+        fabricCanvas.isDrawingMode = false;
+      });
+
+      document.getElementById("clearButton").addEventListener("click", function () {
+        fabricCanvas.clear();
+      });
+
+      document.getElementById("downloadButton").addEventListener("click", function () {
+        const combinedCanvas = document.createElement('canvas');
+        combinedCanvas.width = fabricCanvas.width;
+        combinedCanvas.height = fabricCanvas.height;
+
+        const combinedContext = combinedCanvas.getContext('2d');
+        const matterContext = matterCanvas.getContext('2d');
+        combinedContext.drawImage(matterCanvas, 0, 0);
+        fabricCanvas.renderAll();
+        const fabricImage = fabricCanvas.toCanvasElement();
+        combinedContext.drawImage(fabricImage, 0, 0);
+
+        const link = document.createElement('a');
+        link.href = combinedCanvas.toDataURL('image/png');
+        link.download = 'visphys.png';
+        link.click();
+      });
+      
+      //WebSocketを使ってキャンバスをリアルタイムで反映
+      //WebSocketの接続
+      const ws = new WebSocket('wss://' + window.location.host + '/ws/<%= @token %>'); //サーバーのWebSocketエンドポイント
+      
+      let isWsConnected = false;
+      
+      document.addEventListener("DOMContentLoaded", function () {
+          
+          ws.onopen = () => {
+              console.log('WebSocket connection established');
+              isWsConnected = true;
+          };
+      })
+      
+      //受信時
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        
+        if (data.type === 'draw') {
+          fabric.util.enlivenObjects([data.data], function(objects) {
+            objects.forEach(obj => {
+              fabricCanvas.add(obj);
+            });
+          });
+        } else if (data.type === 'clear') {
+          fabricCanvas.clear();
+        }
+      };
+      
+      //線が書かれた時のイベント
+      fabricCanvas.on('path:created', function(event) {
+        const pathData = event.path.toJSON(); //描画データをJSON形式に
+        //WebSocket接続が確立されているか確認してから送信
+        if (isWsConnected) {
+          ws.send(JSON.stringify({ type: 'draw', data: pathData}));
+        } else {
+          console.warn("WebSocket connection is not open. Mesage not sent.");
+        }
+      });
+    </script>
+  </div>
+</body>
+</html>

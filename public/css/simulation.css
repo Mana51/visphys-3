@@ -1,0 +1,226 @@
+body, html {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;    
+  flex-direction: column; 
+}
+
+.body {
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;    
+}
+
+.simulation-area {
+  margin-left: 5%;
+  position: relative;
+}
+
+#canvas-area {
+  margin-left: 8%;
+}
+
+.form {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0px;
+}
+
+.control {
+  margin-bottom: 20px;
+  background-color: #3E3B50;
+  padding: 10px 15px;
+  border-radius: 15px;
+  display: flex;
+  justify-content: space-between;
+  accent-color: #8C56E5;
+  color: #bebccc;
+  min-width: 250px;
+}
+
+input {
+  width: 100%; /* Or a fixed width like 200px */
+}
+
+.edit-buttons {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+}
+
+.edit-buttons button {
+  background-size: 75%; /* ボタン内の画像サイズ */
+  background-position: center;
+  background-repeat: no-repeat;
+  border: none;
+  width: 40px; /* ボタンの幅 */
+  height: 40px; /* ボタンの高さ */
+  cursor: pointer; /* ポインタに変更 */
+  margin: 5px; /* ボタン間の間隔 */
+  background-color: #3E3B50; /* ボタンの背景色 */
+  border-radius: 20px; /* ボタンの角を丸くする */
+}
+
+
+#drawButton {
+  background-image: url('/img/draw.png');
+}
+
+#selectButton {
+  background-image: url('/img/select.png');
+}
+
+#clearButton {
+  background-image: url('/img/clear.png');
+}
+
+#downloadButton {
+  background-image: url('/img/download.png');
+}
+
+.play_pause {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+  z-index: 2; /* Ensure it's above other elements */
+}
+
+.play_pause button {
+  background-size: 75%;
+  background-position: center;
+  background-repeat: no-repeat;
+  border: none;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  margin: 5px;
+  background-color: #3E3B50;
+  border-radius: 20px;
+}
+
+
+#stopButton {
+  background-image: url('/img/stop.png');
+}
+
+#startButton {
+  background-image: url('/img/start.png');
+}
+
+input, textarea {
+  background-color: #3E3B50;
+  color: #ffffff;
+  border: none;
+  outline: none;
+  width: 55px;
+  margin-left: 5px;
+  font-size: 18px;
+}
+
+.shape {
+  color: #ffffff;
+}
+
+#updateButton {
+  padding: 15px 20px;
+  border-radius: 20px;
+  border: none;
+  font-size: 18px;
+  margin-top: 20px;
+  background: #8C56E5;
+  color: #fff;
+}
+
+canvas {
+  z-index: 5;
+}
+
+#saveSimulationForm {
+    position: absolute;
+    top: 100px; 
+    right: 50px; 
+    display: flex;
+    flex-direction: column; /* Align children in a column */
+    align-items: flex-end; /* Center items horizontally */
+}
+
+#saveSimulationForm input[name="title"]::placeholder {
+  color: #bebccc; 
+  opacity: 1;
+}
+
+#saveSimulationForm input[name="title"] {
+  width: 200px;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+  padding: 10px 15px;
+  border-radius: 15px;
+  margin-top: 10px;
+}
+
+#saveSimulationForm:hover input[name="title"] {
+  visibility: visible;
+  opacity: 1;
+}
+
+#saveSimulationForm {
+    position: absolute;
+    top: 100px; 
+    right: 110px; 
+}
+
+.saveButton {
+  background-image: url('/img/save.png');
+  background-size: 75%; /* ボタン内の画像サイズ */
+  background-position: center;
+  background-repeat: no-repeat;
+  border: none;
+  width: 50px; /* ボタンの幅 */
+  height: 50px; /* ボタンの高さ */
+  cursor: pointer; /* ポインタに変更 */
+  margin: 5px; /* ボタン間の間隔 */
+  background-color: #8C56E5; /* ボタンの背景色 */
+  border-radius: 25px; /* ボタンの角を丸くする */
+}
+
+#saveSimulationForm:hover .saveButton {
+  background-color: #CDC3FB; /* inputフィールドが表示されている間の色 */
+}
+
+#saveSimulationForm:hover .saveButton:hover {
+  background-color: #8C56E5; /* 両方がホバーされている場合の背景色 */
+}
+
+#shareSimulationForm {
+    position: absolute;
+    top: 100px; 
+    right: 30px; 
+}
+
+.shareButton {
+  background-image: url('/img/share.png');
+  background-size: 75%; /* ボタン内の画像サイズ */
+  background-position: center;
+  background-repeat: no-repeat;
+  border: none;
+  width: 50px; /* ボタンの幅 */
+  height: 50px; /* ボタンの高さ */
+  cursor: pointer; /* ポインタに変更 */
+  margin: 5px; /* ボタン間の間隔 */
+  background-color: #8C56E5; /* ボタンの背景色 */
+  border-radius: 25px; /* ボタンの角を丸くする */
+}
+
+.edit-buttons {
+  display: none;
+}
+
+#matterCanvas {
+  pointer-events: auto;
+}

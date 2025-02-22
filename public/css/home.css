@@ -1,0 +1,172 @@
+.body {
+  margin-top: 75px;
+  position: relative;
+}
+
+h1 {
+    font-size: 30px;
+    color: #fff;
+    text-align: center;
+    z-index: 30;
+}
+
+section {
+    display: block;
+    min-height: calc(100vh - 75px);
+    background: #09061B;
+}
+
+.container-area {
+  display: flex;
+  flex-wrap: wrap; /* Allow containers to wrap to the next line */
+  justify-content: space-around;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center; 
+  margin-top: 70px;
+}
+
+.container img {
+  width: 300px;
+  margin-bottom: 30px; 
+}
+
+.container p {
+  font-size: 20px;
+}
+
+.page-title {
+  font-size: 20px;
+  z-index:1;
+  position: relative;
+  font-weight: normal;
+  padding-top: 30px;
+}
+
+form {
+  display: flex;
+  justify-content: center;
+}
+
+.search {
+  width: max-content;
+  display: flex;
+  align-items: center;
+  padding: 24px;
+  border-radius: 35px;
+  background: #f6f6f6;
+  position: relative;
+  z-index: 1;
+  transition: box-background 0.25s;
+  margin: 30px auto;
+  width: 400px;
+}
+
+.search:focus-within {
+  background:#f1f1f1;
+}
+
+.search-input {
+  font-size: 16px;
+  color: #333333;
+  margin-left: 24px;
+  outline: none;
+  border: none;
+  background: transparent;
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+
+.search-input::placeholder, .search-icon {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+/* Hide the default clear (x) button */
+.search-input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.message {
+  position: relative;
+  z-index: 1;
+}
+
+.checkbox-container {
+  margin-top: 20px;
+  display: block;
+  position: absolute;
+  border: 1px solid #ccc;
+  padding: 10px;
+  z-index: 1;
+  width: 200px;
+  max-height: 200px;
+  overflow-y: scroll;
+  color: #3E3B50;
+  background-color: #f6f6f6;
+
+  /* Initial hidden state */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+}
+
+.checkbox-container {
+  margin-top: 10px;
+  display: block;
+  position: absolute;
+  border: 1px solid #ccc;
+  padding: 10px;
+  z-index: 1;
+  width: 220px;
+  max-height: 200px;
+  overflow-y: scroll;
+  color: #3E3B50;
+  background-color: #f6f6f6;
+  border-radius: 10px;
+
+  /* Initial hidden state */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+}
+
+/* Show checkbox-container on hover of the filter-button or its parent */
+.filter-container:hover .checkbox-container {
+  visibility: visible;
+  opacity: 1;
+}
+
+.filter-form {
+  position: absolute;
+  top: 30px; 
+  left: 50px; 
+  display: flex;
+  flex-direction: column; /* Align children in a column */
+  align-items: flex-start; /* Center items horizontally */
+}
+
+.filter-button {
+  border: none;
+  width: 60px; /* ボタンの幅 */
+  height: 60px; /* ボタンの高さ */
+  cursor: pointer; /* ポインタに変更 */
+  padding: 10px; /* ボタン間の間隔 */
+  background-color: #8C56E5; /* ボタンの背景色 */
+  border-radius: 30px; /* ボタンの角を丸くする */
+}
+
+.filter-text {
+  margin-top: 10px;
+  padding: 3px 6px;
+  border-radius: 10px;
+  boder-width: 1px;
+  background-color: #ffffff;
+  border-color: #8C56E5;
+}
